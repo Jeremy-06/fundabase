@@ -177,4 +177,83 @@ SELECT
     i.productStock FROM inventory i
 JOIN products p ON i.products_productId = p.productId
 JOIN productCategories pc ON p.productCategories_categoryId = pc.categoryId
-JOIN suppliers s ON i.suppliers_supplierId = s.supplierId;
+JOIN suppliers s ON i.suppliers_supplierId = s.supplierId
+ORDER BY p.productId;
+
+INSERT INTO products (productName, productPrice, productCategories_categoryId)
+VALUES ('New Product', 99.99, (SELECT categoryId FROM productCategories WHERE category = 'Digital Displays'));
+
+ALTER TABLE cart ADD COLUMN productQty INT;
+
+INSERT INTO customers (customerFname, customerLname, customerAddress, customerPhone) 
+VALUES('RON', 'JEREMY', 'TAGUIG', '111');
+
+SELECT 
+    c.customerId,
+    p.productName, 
+    p.productPrice, 
+    ca.productQty FROM customers c
+JOIN cart ca ON c.customerId = ca.customers_customerId
+JOIN products p ON ca.products_productId = p.productId
+ORDER BY c.customerId;
+
+ALTER TABLE customers ADD COLUMN userId INT NOT NULL;
+ALTER TABLE customers ADD CONSTRAINT fk_customers_userId FOREIGN KEY (userId) REFERENCES users(userId);
+
+INSERT INTO users (username, password)
+VALUES ('ronjeremy', 'password123');
+
+UPDATE customers 
+SET userId = (SELECT userId FROM users WHERE username = 'ronjeremy')
+WHERE customerId = 1
+
+SELECT * FROM users;
+SELECT * FROM customers;
+
+SELECT
+    s.supplierName,
+    pc.category,
+    p.productName,
+    p.productPrice
+FROM products p
+JOIN productCategories pc ON p.productCategories_categoryId = pc.categoryId
+JOIN inventory i ON p.productId = i.products_productId
+JOIN suppliers s ON i.suppliers_supplierId = s.supplierId
+ORDER BY s.supplierId;
+
+ALTER TABLE orderitems DROP COLUMN productQty;
+
+SELECT
+    s.supplierName,
+    pc.category,
+    p.productName,
+    p.productPrice
+FROM products p
+JOIN productCategories pc ON p.productCategories_categoryId = pc.categoryId
+JOIN inventory i ON p.productId = i.products_productId
+JOIN suppliers s ON i.suppliers_supplierId = s.supplierId
+GROUP BY pc.category
+ORDER BY p.productId;
+
+SELECT
+    s.supplierName,
+    pc.category,
+    p.productName,
+    p.productPrice
+FROM products p
+JOIN productCategories pc ON p.productCategories_categoryId = pc.categoryId
+JOIN inventory i ON p.productId = i.products_productId
+JOIN suppliers s ON i.suppliers_supplierId = s.supplierId
+ORDER BY pc.category, p.productId;
+
+SELECT
+    p.productId,
+    s.supplierName,
+    pc.category,
+    p.productName,
+    p.productPrice
+FROM products p
+JOIN productCategories pc ON p.productCategories_categoryId = pc.categoryId
+JOIN inventory i ON p.productId = i.products_productId
+JOIN suppliers s ON i.suppliers_supplierId = s.supplierId
+ORDER BY s.supplierName, p.productId;
