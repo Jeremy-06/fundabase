@@ -211,6 +211,7 @@ SELECT * FROM users;
 SELECT * FROM customers;
 
 SELECT
+    p.productId,
     s.supplierName,
     pc.category,
     p.productName,
@@ -219,7 +220,7 @@ FROM products p
 JOIN productCategories pc ON p.productCategories_categoryId = pc.categoryId
 JOIN inventory i ON p.productId = i.products_productId
 JOIN suppliers s ON i.suppliers_supplierId = s.supplierId
-ORDER BY s.supplierId;
+ORDER BY s.supplierId, p.productId;
 
 ALTER TABLE orderitems DROP COLUMN productQty;
 
@@ -257,3 +258,119 @@ JOIN productCategories pc ON p.productCategories_categoryId = pc.categoryId
 JOIN inventory i ON p.productId = i.products_productId
 JOIN suppliers s ON i.suppliers_supplierId = s.supplierId
 ORDER BY s.supplierName, p.productId;
+
+SELECT 
+    o.orderId AS 'Order No.',
+    CONCAT(c.customerFname, ' ', c.customerLname) AS 'Customer Name',
+    c.customerAddress AS 'Address',
+    o.orderDate AS 'Order Date',
+    p.productName AS 'Product',
+    p.productPrice AS 'Product Price'
+FROM orders o
+JOIN orderitems oi ON o.orderId = oi.orders_orderId
+JOIN customers c ON oi.cart_customers_customerId = c.customerId
+JOIN products p ON oi.cart_products_productId = p.productId;
+
+INSERT INTO orderitems (productQty, );
+
+ALTER TABLE orderitems DROP COLUMN orders_orderId;
+
+ALTER TABLE orderitems
+DROP PRIMARY KEY;
+
+ALTER TABLE orderitems
+DROP FOREIGN KEY fk_orderitems_orders;
+
+ALTER TABLE orderitems
+DROP COLUMN orders_orderId;
+
+ALTER TABLE orderitems
+ADD PRIMARY KEY (
+  orderItemsId,
+  cart_cartId,
+  cart_products_productId,
+  cart_customers_customerId
+);
+
+SELECT 
+    ca.cartId,
+    o.orderId,
+    oi.orderitemsId,
+    o.orderDate,
+    o.orderStatus,
+    CONCAT(c.customerFname, ' ', c.customerLname) AS customerName,
+    c.customerAddress,
+    p.productName,
+    oi.productQty,
+    p.productPrice,
+    (oi.productQty * p.productPrice) AS totalAmount,
+    s.salesDate
+FROM orders o
+JOIN sales s ON o.sales_salesId = s.salesId
+JOIN orderitems oi ON oi.orders_orderId = o.orderId
+JOIN cart ca ON oi.cart_cartId = ca.cartId
+    AND oi.cart_products_productId = ca.products_productId
+    AND oi.cart_customers_customerId = ca.customers_customerId
+JOIN products p ON ca.products_productId = p.productId
+JOIN customers c ON ca.customers_customerId = c.customerId
+ORDER BY orderId, oi.orderitemsId;
+
+SELECT 
+    SUM(oi.productQty * p.productPrice) AS totalSales
+FROM orders o
+JOIN orderitems oi ON oi.orders_orderId = o.orderId
+JOIN cart ca ON oi.cart_cartId = ca.cartId
+    AND oi.cart_products_productId = ca.products_productId
+    AND oi.cart_customers_customerId = ca.customers_customerId
+JOIN products p ON ca.products_productId = p.productId;
+--WHERE o.orderStatus = 'Completed';
+
+ALTER TABLE sales ADD COLUMN orderId INT UNIQUE;
+ALTER TABLE sales
+ADD CONSTRAINT fk_sales_order
+FOREIGN KEY (orderId) REFERENCES orders(orderId)
+ON DELETE CASCADE
+ON UPDATE CASCADE;
+-- This may vary by your DB setup
+ALTER TABLE orders DROP FOREIGN KEY sales_salesId;
+ALTER TABLE orders DROP COLUMN sales_salesId;
+
+SELECT 
+                        ca.cartId,
+                        c.customerId,
+                        p.productName,
+                        p.productPrice,
+                        ca.productQty
+                     FROM customers c
+                     INNER JOIN cart ca ON c.customerId = ca.customers_customerId
+                     INNER JOIN products p ON ca.products_productId = p.productId
+                     LEFT JOIN orderitems oi ON ca.cartId = oi.cart_cartId
+                     WHERE oi.cart_cartId IS NULL
+                     ORDER BY p.productId;
+
+                
+SELECT 
+    ca.cartId,
+    c.customerId,
+    p.productName,
+    p.productPrice,
+    ca.productQty - IFNULL(SUM(oi.productQty), 0) AS remainingQty
+FROM cart ca
+INNER JOIN customers c ON ca.customers_customerId = c.customerId
+INNER JOIN products p ON ca.products_productId = p.productId
+LEFT JOIN orderitems oi ON ca.cartId = oi.cart_cartId
+GROUP BY ca.cartId
+HAVING remainingQty > 0
+ORDER BY p.productId;
+
+-- Delete in correct order (child tables first)
+DELETE FROM orderitems;
+DELETE FROM orders;
+DELETE FROM sales;
+DELETE FROM cart;
+
+-- Optional: Reset auto-increment counters
+ALTER TABLE orderitems AUTO_INCREMENT = 1;
+ALTER TABLE orders AUTO_INCREMENT = 1;
+ALTER TABLE sales AUTO_INCREMENT = 1;
+ALTER TABLE cart AUTO_INCREMENT = 1;
