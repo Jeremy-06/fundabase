@@ -470,3 +470,11 @@ ALTER TABLE customers MODIFY COLUMN customerPhone VARCHAR(20);
 
 -- Expand users table roles
 ALTER TABLE users MODIFY COLUMN userRole ENUM('admin', 'inventory_manager', 'order_manager', 'financial_auditor', 'customer') DEFAULT 'customer';
+
+
+UPDATE users
+SET userRole = 'admin'
+WHERE userId = 2;
+INSERT INTO admin_users (userId, adminRole, fullName, email, phone) VALUES (2, 'super_admin', (SELECT CONCAT(customerLname, ' ', customerFname) FROM customers WHERE customerId = 2), 'queenlilith@gmail.com', (SELECT customerPhone FROM customers WHERE customerId = 2));
+
+SHOW TABLES;
