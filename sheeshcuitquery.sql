@@ -178,3 +178,6 @@ SELECT
 JOIN products p ON i.products_productId = p.productId
 JOIN productCategories pc ON p.productCategories_categoryId = pc.categoryId
 JOIN suppliers s ON i.suppliers_supplierId = s.supplierId;
+
+
+--try nga mag pull request
